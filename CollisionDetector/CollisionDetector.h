@@ -1,16 +1,28 @@
 #pragma once
 
-
-#include <unordered_map>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
 #include <vector>
 
 
 using namespace std;
 
+/*
+TODO: 변수명 정리하고 unit test 하기 
+*/
+
+
+struct MockingTet {
+	int id1;
+	int id2;
+	int id3;
+	int id4;
+};
+
 
 struct MockingMesh{
 	//tet info
-
+	vector<MockingTet> tet;
 	vector<glm::vec3> vertices;
 };
 
@@ -21,16 +33,14 @@ struct MappedVertice {
 	int timeStamp;
 };
 
-class CollisionInfo {
+struct CollisionInfo {
 
-	MockingMesh* penetratedMesh;
-	MockingMesh* penetratingMesh;
+	MockingMesh* penetratedMesh=nullptr;
+	MockingMesh* penetratingMesh=nullptr;
 
 
 	//TODO: index 로 줄지 결정
-	vector<glm::vec3> verticeList;
-
-
+	vector<int> verticeList;
 };
 
 
@@ -51,11 +61,16 @@ public:
 	int p1, p2, p3;
 
 	int n;//table size
+
 	float gridSize;
 
 
 	//TODO: table initialize 
-	CollisionDetector() :p1(5), p2(6), p3(7), n(1000), gridSize(1), timeStamp(0) {
+	CollisionDetector() :p1(73856093), p2(19349663), p3(83492791), n(1000), gridSize(1), timeStamp(0) {
+		/*
+			large prime number
+		*/
+		hashTable.reserve(n);
 
 	};
 	~CollisionDetector();
@@ -64,8 +79,9 @@ public:
 	void addObject(MockingMesh* mesh);
 	void setHashParam(int p1, int p2, int p3, int tableSize, float gridSize);
 	
-	CollisionInfo detectCollision();
-	void mapVertices();
+	vector<CollisionInfo> detectCollision();
+	
+
 
 
 
@@ -73,7 +89,7 @@ public:
 private:
 
 	vector<MockingMesh*> m_obj_list;
-	//TODO: hash table 을 list로도 구현가능?
+	//TODO: linked list vs vector 
 	vector<vector<MappedVertice>> hashTable; 
 
 
@@ -82,8 +98,8 @@ private:
 	void mapVertices(); //timestamp update
 	
 	int calculateKey(float x, float y, float z); //if n<0 n+=bucketsize
-	int checkIntersect();
-	int calculateAABB();
+	bool IsIntersect(MockingMesh* mesh, int tet_index, glm::vec3& point);
+	void calculateAABB(MockingMesh* mesh, int tet_index, glm::vec3& minout, glm::vec3& maxout);
 	void cleanHashTable();
 
 };
