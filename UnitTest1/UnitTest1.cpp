@@ -16,6 +16,7 @@ namespace UnitTest1
 		TEST_METHOD(TestMethod1)
 		{
 			MockingMesh mesh;
+
 			//Assert::AreEqual();
 		}
 	};

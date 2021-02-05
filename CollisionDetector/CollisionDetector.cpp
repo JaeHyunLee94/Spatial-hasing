@@ -3,6 +3,7 @@
 
 void CollisionDetector::addObject(MockingMesh* mesh)
 {
+	assert(mesh != nullptr && mesh != NULL);
 	this->m_obj_list.push_back(mesh);
 }
 
@@ -32,6 +33,8 @@ vector<CollisionInfo> CollisionDetector::detectCollision()
 
 			후보 vertice 중 충돌한다면
 			contactinfo list에 object 정보와 함께 넣음
+
+			 같은 tetrahedron 이면 넣지 않기
 		}
 
 		timestamp++;
@@ -66,30 +69,33 @@ vector<CollisionInfo> CollisionDetector::detectCollision()
 
 						int key = calculateKey(x, y, z);
 
-						for (int i = 0; i < hashTable[key].size(); i++) {
+						for (list<MappedVertice>::iterator iter = hashTable[key].begin() ; iter->timeStamp <= timeStamp ; iter++) {
 
 							// penetrating candidate vertex 
-							int obj_index = hashTable[key][i].obj_index;
-							glm::vec3 point = m_obj_list[obj_index]->vertices[hashTable[key][i].vectice_index];
+							int obj_index = iter->obj_index;
+							int vertex_index = iter->vectice_index;
+							glm::vec3 point = m_obj_list[obj_index]->vertices[vertex_index];
 							
-							if (hashTable[key][i].timeStamp == timeStamp && IsIntersect(tmp_mesh,tet_inx, point )) {
+							if (IsIntersect(tmp_mesh,tet_inx, point )) {
 
 								bool find = false;
 								for (int col_inx = 0; col_inx < ret.size(); col_inx++) {
 
-									if (ret[col_inx].penetratingMesh == m_obj_list[hashTable[key][i].obj_index] && ret[col_inx].penetratedMesh == tmp_mesh) {
+									if (ret[col_inx].penetratingMesh == m_obj_list[obj_index] && ret[col_inx].penetratedMesh == tmp_mesh) {
 										find = true;
-										ret[col_inx].verticeList.push_back(hashTable[key][i].vectice_index);
+										ret[col_inx].verticeList.push_back(vertex_index);
 										break;
 									}
 
 								}
 								if (!find) {
+									assert(tmp_mesh != nullptr);
+									assert(m_obj_list[obj_index] != nullptr);
 									ret.push_back(
 										CollisionInfo{
 											tmp_mesh,
 											m_obj_list[obj_index],
-											vector<int>()
+											vector<int>(1,vertex_index)
 										}
 									);
 								}
@@ -118,7 +124,11 @@ vector<CollisionInfo> CollisionDetector::detectCollision()
 
 	}
 
-	
+	if (timeStamp % 10000 == 9999) {
+		cleanHashTable();
+		timeStamp = 0;
+	}
+
 	timeStamp++;
 	return ret;
 }
@@ -148,7 +158,7 @@ void CollisionDetector::mapVertices()
 			glm::vec3 pos = m_obj_list[i]->vertices[v];
 			int key = calculateKey(pos.x, pos.y, pos.z);
 
-			hashTable[key].push_back(
+			hashTable[key].push_front(
 				MappedVertice{
 					i,
 					v,
@@ -178,17 +188,24 @@ bool CollisionDetector::IsIntersect(MockingMesh* mesh, int tet_index, glm::vec3&
 	* check intersect bewtween tetrahedron and vertex
 	*/
 
-	glm::vec3 barycentricV1 = mesh->vertices[mesh->tet[tet_index].id2] - mesh->vertices[mesh->tet[tet_index].id1];
-	glm::vec3 barycentricV2 = mesh->vertices[mesh->tet[tet_index].id3] - mesh->vertices[mesh->tet[tet_index].id1];
-	glm::vec3 barycentricV3 = mesh->vertices[mesh->tet[tet_index].id4] - mesh->vertices[mesh->tet[tet_index].id1];
-	glm::vec3 p_x0= point - mesh->vertices[mesh->tet[tet_index].id1]; //p-x0 vector
+	glm::vec3 x1 = mesh->vertices[mesh->tet[tet_index].id1];
+	glm::vec3 x2 = mesh->vertices[mesh->tet[tet_index].id2];
+	glm::vec3 x3 = mesh->vertices[mesh->tet[tet_index].id3];
+	glm::vec3 x4 = mesh->vertices[mesh->tet[tet_index].id4];
+
+	if (checkSamePoint(x1, point) || checkSamePoint(x2, point) || checkSamePoint(x3, point) || checkSamePoint(x4, point)) return false;
+
+	glm::vec3 barycentricV1 = x2 - x1;
+	glm::vec3 barycentricV2 = x3 - x1;
+	glm::vec3 barycentricV3 = x4 - x1;
+	glm::vec3 p_x0= point -x1; //p-x0 vector
 	glm::mat3x3 A(barycentricV1, barycentricV2, barycentricV3);
 
 	//what if non invertible?
 	glm::mat3x3 Ainverse= glm::inverse(A);
 	glm::vec3 solution = Ainverse * p_x0;
 
-	if (solution.x >= 0 && solution.y >= 0 && solution.z >= 0 && solution.x + solution.y + solution.z <= 1) return true;
+	if (solution.x > 0 && solution.y > 0 && solution.z > 0 && solution.x + solution.y + solution.z < 1) return true;
 	return false;
 }
 
@@ -235,7 +252,7 @@ void CollisionDetector::cleanHashTable()
 	*/
 
 
-	for (int i = 0; i < n; i++) {
+	/*for (int i = 0; i < n; i++) {
 		for (vector<MappedVertice>::iterator iter = hashTable[i].begin() ; iter == hashTable[i].end();) {
 
 			if (iter->timeStamp != timeStamp) {
@@ -246,6 +263,17 @@ void CollisionDetector::cleanHashTable()
 			}
 
 		}
+	}*/
+	for (int i = 0; i < n; i++) {
+		hashTable[i].clear();
 	}
+	
 
+}
+
+bool CollisionDetector::checkSamePoint(glm::vec3& point1, glm::vec3& point2)
+{
+	
+	if (abs(point1.x - point2.x) < epsilone && abs(point1.y - point2.y) < epsilone && abs(point1.z - point2.z) < epsilone) return true;
+	return false;
 }
