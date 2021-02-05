@@ -50,9 +50,7 @@ vector<CollisionInfo> CollisionDetector::detectCollision()
 		
 
 		MockingMesh* tmp_mesh = m_obj_list[mesh_inx];
-		CollisionInfo tmp_info;
-		tmp_info.penetratedMesh = tmp_mesh;
-		ret.push_back(tmp_info);
+	
 		// iter each tetrahedron
 		for (int tet_inx = 0; tet_inx < tmp_mesh->tet.size(); tet_inx++) {
 			
@@ -62,14 +60,14 @@ vector<CollisionInfo> CollisionDetector::detectCollision()
 			calculateAABB(tmp_mesh, tet_inx, aabb_min, aabb_max);
 			
 			//iter overlapping cell
-			for (int x = (int)aabb_min.x; x <= (int)aabb_max.x; x++) {
-				for (int y = (int)aabb_min.y; y <= (int)aabb_max.y;  y++) {
-					for (int z = (int)aabb_min.z; z <= (int)aabb_max.z; z++) {
+			for (float x = floorf(aabb_min.x); x <= aabb_max.x+gridSize; x+=gridSize) {
+				for (float y = floorf(aabb_min.y); y <= aabb_max.y+gridSize;  y+= gridSize) {
+					for (float z = floorf(aabb_min.z); z <= aabb_max.z+gridSize; z+= gridSize) { //TODO: µû·Î »©±â
 
 
 						int key = calculateKey(x, y, z);
 
-						for (list<MappedVertice>::iterator iter = hashTable[key].begin() ; iter->timeStamp <= timeStamp ; iter++) {
+						for (list<MappedVertice>::iterator iter = hashTable[key].begin() ; iter != hashTable[key].end() && iter->timeStamp == timeStamp; iter++) {
 
 							// penetrating candidate vertex 
 							int obj_index = iter->obj_index;
@@ -77,7 +75,7 @@ vector<CollisionInfo> CollisionDetector::detectCollision()
 							glm::vec3 point = m_obj_list[obj_index]->vertices[vertex_index];
 							
 							if (IsIntersect(tmp_mesh,tet_inx, point )) {
-
+								//printf_s("mesh_inx: [%d], tet_inx: [%d], (x,y,z) : (%g,%g,%g), obj_index: [%d], vertex_index: [%d], \n", mesh_inx, tet_inx, x, y, z, obj_index, vertex_index);
 								bool find = false;
 								for (int col_inx = 0; col_inx < ret.size(); col_inx++) {
 
@@ -123,6 +121,8 @@ vector<CollisionInfo> CollisionDetector::detectCollision()
 
 
 	}
+
+	for (auto& collisioninfo : ret) makeVectorUnique(collisioninfo.verticeList);
 
 	if (timeStamp % 10000 == 9999) {
 		cleanHashTable();
@@ -177,8 +177,12 @@ void CollisionDetector::mapVertices()
 
 int CollisionDetector::calculateKey(float x, float y, float z)
 {
-	int ret= ( ((int)(x / gridSize) * p1) ^ ((int)(y / gridSize) * p2) ^ ((int)(z / gridSize)*p3) ) % n;
+	int a1 = ((int)floorf(x / gridSize)) * p1;
+	int a2 = ((int)floorf(y / gridSize)) * p2;
+	int a3 = ((int)floorf(z / gridSize)) * p3;
+	int ret= ( a1 ^ a2 ^ a3 ) % n;
 
+	if(ret<0 ) ret+=n;
 	return ret;
 }
 
@@ -277,3 +281,12 @@ bool CollisionDetector::checkSamePoint(glm::vec3& point1, glm::vec3& point2)
 	if (abs(point1.x - point2.x) < epsilone && abs(point1.y - point2.y) < epsilone && abs(point1.z - point2.z) < epsilone) return true;
 	return false;
 }
+
+void CollisionDetector::makeVectorUnique(vector<int>& v)
+{
+
+	sort(v.begin(), v.end());
+	v.erase(unique(v.begin(), v.end()), v.end());
+
+}
+

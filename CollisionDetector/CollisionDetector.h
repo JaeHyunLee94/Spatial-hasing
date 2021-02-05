@@ -1,5 +1,6 @@
 #pragma once
 
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <vector>
@@ -70,14 +71,16 @@ public:
 
 
 	//TODO: table initialize 
-	CollisionDetector() :p1(73856093), p2(19349663), p3(83492791), n(8000), gridSize(1), timeStamp(0),epsilone(0.0000001) {
+	CollisionDetector() :p1(73856093), p2(19349663), p3(83492791), n(10), gridSize(1), timeStamp(0),epsilone(0.0000001) {
 		/*
 			large prime number
 		*/
-		hashTable.reserve(n);
+		for (int i = 0; i < n; i++) hashTable.push_back(list<MappedVertice>());
+		
 
 	};
-	~CollisionDetector();
+	~CollisionDetector() {
+	};
 
 
 	void addObject(MockingMesh* mesh);
@@ -86,26 +89,26 @@ public:
 	vector<CollisionInfo> detectCollision();
 	
 
-
-
-
-
-private:
-
 	vector<MockingMesh*> m_obj_list;
 	//TODO: linked list vs vector 
-	vector<list<MappedVertice>> hashTable; 
-
+	vector<list<MappedVertice>> hashTable;
 
 
 
 	void mapVertices(); //timestamp update
-	
+
 	int calculateKey(float x, float y, float z); //if n<0 n+=bucketsize
 	bool IsIntersect(MockingMesh* mesh, int tet_index, glm::vec3& point);
 	void calculateAABB(MockingMesh* mesh, int tet_index, glm::vec3& minout, glm::vec3& maxout);
 	void cleanHashTable();
 	bool checkSamePoint(glm::vec3& point1, glm::vec3& point2);
+	void makeVectorUnique(vector<int>& v);
+
+
+
+private:
+
+	
 
 };
 
