@@ -8,6 +8,6 @@ This repository contains implementations of two papers:
  This code is also a part of the SIGGRAPH paper titled [Constrained projective dynamics: real-time simulation of deformable objects with energy-momentum conservation](https://dl.acm.org/doi/abs/10.1145/3450626.3459878?casa_token=gdWYjIfObI0AAAAA:N5L_CBJZei-5VG6OGEeh96Q_9ffWpICrTaOyqKjy5xJ1oa_JUAehzXsUcr8OKf_HeTUbu-cGV4oJ8LM)
 
 
- ![bear](https://github.com/LEE-JAE-HYUN179/Spatial-hasing/assets/46246202/181e23c2-02c2-4e64-ae03-5038c006fd46)
+![bear](https://github.com/LEE-JAE-HYUN179/Spatial-hasing/assets/46246202/9fe280f0-2071-43b4-874e-807e52fdcbff)
 
- ![strip](https://github.com/LEE-JAE-HYUN179/Spatial-hasing/assets/46246202/1eaa266c-4185-450f-9f64-f689ac832340)
+![strip](https://github.com/LEE-JAE-HYUN179/Spatial-hasing/assets/46246202/06bbf3f2-c0cb-4517-80da-9234157d13b4)
